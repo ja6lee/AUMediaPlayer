@@ -64,6 +64,9 @@ typedef NS_ENUM(NSInteger, AUMediaType){
  */
 - (NSString *)fileTypeExtension;
 
+- (NSString *)headerInfo;
+- (AVAsset*) asset;
+
 @optional
 
 /**

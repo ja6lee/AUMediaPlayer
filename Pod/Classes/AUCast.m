@@ -52,6 +52,7 @@ NSString *const kAUMediaCastDevicesNearbyChanged = @"kAUMediaCastDevicesNearbyCh
     
     GCKFilterCriteria *filterCriteria = [GCKFilterCriteria criteriaForAvailableApplicationWithID:applicationID];
     self.deviceScanner = [[GCKDeviceScanner alloc] initWithFilterCriteria:filterCriteria];
+    [self.deviceScanner setPassiveScan:YES];
 }
 
 - (void)setSearchDevices:(BOOL)searchDevices {
@@ -193,7 +194,7 @@ NSString *const kAUMediaCastDevicesNearbyChanged = @"kAUMediaCastDevicesNearbyCh
     
     _mediaToPlay = [[GCKMediaInformation alloc] initWithContentID:path
                                                        streamType:GCKMediaStreamTypeNone
-                                                      contentType:@""
+                                                      contentType:@"audio/mpeg"
                                                          metadata:metadata
                                                    streamDuration:0
                                                        customData:nil];
@@ -203,9 +204,8 @@ NSString *const kAUMediaCastDevicesNearbyChanged = @"kAUMediaCastDevicesNearbyCh
     if ([self.deviceManager applicationConnectionState] == GCKConnectionStateConnected) {
         [self play];
     }
+    
 }
-
-
 
 - (void)resume {
     if (self.status == AUCastStatusPaused) {

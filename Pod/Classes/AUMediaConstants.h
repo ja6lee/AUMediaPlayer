@@ -31,3 +31,5 @@ extern NSString *const kAUMediaPlaybackDidReachEndNotification;
 extern NSString *const kAUMediaPlayedItemDidChangeNotification;
 extern NSString *const kAUMediaPlayerFailedToPlayItemNotification;
 extern NSString *const kAUMediaPlayerFailedToPlayItemNotificationUserInfoErrorKey;
+extern NSString *const kAUMediaPlayedItemDidBuffer;
+extern NSString *const kAUMediaPlayedItemDidBufferUserInfoKey;

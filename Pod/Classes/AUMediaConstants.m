@@ -27,3 +27,5 @@ NSString *const kAUMediaPlaybackDidReachEndNotification = @"kAUMediaPlaybackDidR
 NSString *const kAUMediaPlayedItemDidChangeNotification = @"kAUMediaPlayedItemDidChangeNotification";
 NSString *const kAUMediaPlayerFailedToPlayItemNotification = @"kAUMediaPlayerFailedToPlayItemNotification";
 NSString *const kAUMediaPlayerFailedToPlayItemNotificationUserInfoErrorKey = @"kAUMediaPlayerFailedToPlayItemNotificationUserInfoErrorKey";
+NSString *const kAUMediaPlayedItemDidBuffer = @"kAUMediaPlayedItemDidBuffer";
+NSString *const kAUMediaPlayedItemDidBufferUserInfoKey = @"kAUMediaPlayedItemDidBufferUserInfoKey";

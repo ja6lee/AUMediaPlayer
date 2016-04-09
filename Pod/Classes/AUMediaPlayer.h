@@ -215,6 +215,9 @@ typedef NS_ENUM(NSUInteger, AUMediaReceiverType){
  *  @param error Error is assigned when playback fails.
  */
 - (void)playItem:(id<AUMediaItem>)item error:(NSError * __autoreleasing *)error;
+
+-(void) clearAllItems;
+
 /**
  *  Creates queue from mediaItems array of given collection and starts playing it starting from the first one.
  *
@@ -294,6 +297,8 @@ typedef NS_ENUM(NSUInteger, AUMediaReceiverType){
  *  @param time  time the item is to be played from
  */
 - (void)restorePlayerStateWithItem:(id<AUMediaItem>)item queue:(NSArray *)queue playbackTime:(CMTime)time error:(NSError *__autoreleasing *)error;
+
+-(AVPlayerItem*)nowPlayingAVItem;
 
 /**
  * Use this method to change receiver type. If change is possible it returns YES.

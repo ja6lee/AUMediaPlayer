@@ -34,6 +34,7 @@ static const void *AVPlayerItemAssociatedItem = &AVPlayerItemAssociatedItem;
 
 static void *AVPlayerPlaybackRateObservationContext = &AVPlayerPlaybackRateObservationContext;
 static void *AVPlayerPlaybackStatusObservationContext = &AVPlayerPlaybackStatusObservationContext;
+static void *AVPlayerPlaybackLoadTimeObservationContext = &AVPlayerPlaybackLoadTimeObservationContext;
 static void *AVPlayerPlaybackCurrentItemObservationContext = &AVPlayerPlaybackCurrentItemObservationContext;
 static void *AVPlayerPlaybackCurrentItemOldObservationContext = &AVPlayerPlaybackCurrentItemOldObservationContext;
 static void *AVPlayerPlaybackBufferEmptyObservationContext = &AVPlayerPlaybackBufferEmptyObservationContext;
@@ -126,6 +127,13 @@ static void *AVPlayerPlaybackBufferEmptyObservationContext = &AVPlayerPlaybackBu
     }
     
     [self play];
+}
+
+-(void) clearAllItems {
+    _queue = [NSArray new];
+    _shuffledQueue = [NSArray new];
+    _currentPlaybackTime = 0;
+    //_player = nil;
 }
 
 - (void)playItemQueue:(id<AUMediaItemCollection>)collection error:(NSError *__autoreleasing *)error {
@@ -246,6 +254,7 @@ static void *AVPlayerPlaybackBufferEmptyObservationContext = &AVPlayerPlaybackBu
     
     NSUInteger nextTrackIndex = (self.currentlyPlayedTrackIndex + 1) % self.queue.count;
     id<AUMediaItem> nextItem = [self.playingQueue objectAtIndex:nextTrackIndex];
+    [self pause];
     [self updatePlayerWithItem:nextItem error:&error];
     
     if (error) {
@@ -400,7 +409,7 @@ static void *AVPlayerPlaybackBufferEmptyObservationContext = &AVPlayerPlaybackBu
             NSLog(@"Playback will occur from local file with url: %@", url);
     }
     if (!url && [item respondsToSelector:@selector(localPath)] && [item localPath]) {
-        url = [NSURL fileURLWithPath:[item localPath]];
+        url = [NSURL URLWithString:[item localPath]];
         if (url)
             NSLog(@"Playback will occur from external disk file with url: %@", url);
     }
@@ -414,7 +423,15 @@ static void *AVPlayerPlaybackBufferEmptyObservationContext = &AVPlayerPlaybackBu
         return;
     }
     
-    AVPlayerItem *playerItem = [[AVPlayerItem alloc] initWithURL:url];
+    AVPlayerItem *playerItem;
+    if ([item headerInfo]) {
+        NSDictionary *headers = [NSDictionary dictionaryWithObjectsAndKeys:[item headerInfo], @"Authorization", nil];
+        AVURLAsset * asset = [AVURLAsset URLAssetWithURL:url options:@{@"AVURLAssetHTTPHeaderFieldsKey" : headers}];
+        playerItem = [AVPlayerItem playerItemWithAsset:asset];
+    } else {
+        playerItem = [[AVPlayerItem alloc] initWithURL:url];
+    }
+        
     objc_setAssociatedObject(playerItem, AVPlayerItemAssociatedItem, item, OBJC_ASSOCIATION_RETAIN_NONATOMIC);
     
     if ([item itemType] == AUMediaTypeAudio) {
@@ -552,6 +569,10 @@ static void *AVPlayerPlaybackBufferEmptyObservationContext = &AVPlayerPlaybackBu
     return(kCMTimeInvalid);
 }
 
+-(AVPlayerItem *) nowPlayingAVItem {
+    return _player.currentItem;
+}
+
 #pragma mark - KVO observer
 
 - (void)observeValueForKeyPath:(NSString *)keyPath
@@ -576,6 +597,10 @@ static void *AVPlayerPlaybackBufferEmptyObservationContext = &AVPlayerPlaybackBu
         AVPlayerItem *priorItem = [change objectForKey:NSKeyValueChangeOldKey];
         
         if (priorItem && priorItem != (id)[NSNull null]) {
+            @try {
+                [priorItem removeObserver:self forKeyPath:@"loadedTimeRanges" context:AVPlayerPlaybackLoadTimeObservationContext];
+            } @catch(id anException) {
+            }
             [priorItem removeObserver:self forKeyPath:@"status" context:AVPlayerPlaybackStatusObservationContext];
             [priorItem removeObserver:self forKeyPath:@"playbackBufferEmpty" context:AVPlayerPlaybackBufferEmptyObservationContext];
             
@@ -634,7 +659,19 @@ static void *AVPlayerPlaybackBufferEmptyObservationContext = &AVPlayerPlaybackBu
             [self play];
         }
     } else {
-        [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+    
+        if ([keyPath isEqualToString:@"loadedTimeRanges"]) {
+            NSArray *timeRanges = (NSArray *)[change objectForKey:NSKeyValueChangeNewKey];
+            if (timeRanges && [timeRanges count]) {
+                CMTimeRange timerange = [[timeRanges objectAtIndex:0] CMTimeRangeValue];
+                
+                [[NSNotificationCenter defaultCenter] postNotificationName:kAUMediaPlayedItemDidBuffer object:nil userInfo:@{kAUMediaPlayedItemDidBufferUserInfoKey : [NSNumber numberWithFloat:CMTimeGetSeconds(CMTimeAdd(timerange.start, timerange.duration))]}];
+                NSLog(@"BUFFERED: %f", CMTimeGetSeconds(CMTimeAdd(timerange.start, timerange.duration)));
+            }
+            
+        } else {
+            [super observeValueForKeyPath:keyPath ofObject:object change:change context:context];
+        }
     }
 }
 
@@ -656,7 +693,8 @@ static void *AVPlayerPlaybackBufferEmptyObservationContext = &AVPlayerPlaybackBu
 }
 
 - (BOOL)playerIsPlaying {
-    if (self.player.rate > 0.0f && self.player.error == nil) {
+    NSLog(@"Player rate: %f", self.player.rate);
+    if (self.player.rate != 0.0f && self.player.error == nil) {
         return YES;
     }
     return NO;
@@ -682,6 +720,11 @@ static void *AVPlayerPlaybackBufferEmptyObservationContext = &AVPlayerPlaybackBu
                      forKeyPath:@"playbackBufferEmpty"
                         options:NSKeyValueObservingOptionInitial | NSKeyValueObservingOptionNew
                         context:AVPlayerPlaybackBufferEmptyObservationContext];
+        
+        [playerItem addObserver:self
+                     forKeyPath:@"loadedTimeRanges"
+                        options:NSKeyValueObservingOptionNew
+                        context:AVPlayerPlaybackLoadTimeObservationContext];
         
         [playerItem addObserver:self
                      forKeyPath:@"status"
