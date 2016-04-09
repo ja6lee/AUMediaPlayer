@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
   s.homepage         = "https://github.com/appunite/AUMediaPlayer"
   s.license          = 'MIT'
   s.author           = { "lukasz.kasperek" => "lukasz.kasperek@appunite.com" }
-  s.source           = { :git => "https://github.com/appunite/AUMediaPlayer.git", :tag => s.version.to_s }
+  s.source           = { :git => "https://github.com/ja6lee/AUMediaPlayer.git", :tag => s.version.to_s }
   s.social_media_url = 'https://medium.com/@appunite'
 
   s.platform     = :ios, '7.0'
@@ -30,7 +30,7 @@ Pod::Spec.new do |s|
   s.framework = 'GoogleCast'
   s.xcconfig = { 'FRAMEWORK_SEARCH_PATHS' => '"${PODS_ROOT}/AUMediaPlayer/Frameworks/GoogleCastSDK-2.7.1-Release"' }
 
-  s.dependency 'AFNetworking', '~> 2.3'
+  s.dependency 'AFNetworking', '~> 3.0'
   #s.dependency 'google-cast-sdk', '~>2.7.1'
   
 end
